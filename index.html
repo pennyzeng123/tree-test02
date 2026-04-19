@@ -2,14 +2,16 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>你是一棵什么树</title>
 <style>
 body{font-family:sans-serif;font-size:2.2em;background:linear-gradient(135deg,#fff7cc,#e6f5d0);display:flex;justify-content:center;align-items:center;height:100vh;position:relative;overflow:hidden;margin:0;}
 body::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%, rgba(255,255,255,0.8) 2px, transparent 3px),radial-gradient(circle at 70% 20%, rgba(255,255,255,0.7) 2px, transparent 3px),radial-gradient(circle at 40% 80%, rgba(255,255,255,0.6) 2px, transparent 3px),radial-gradient(circle at 80% 70%, rgba(255,255,255,0.7) 2px, transparent 3px),radial-gradient(circle at 10% 60%, rgba(255,255,255,0.5) 2px, transparent 3px),radial-gradient(circle at 30% 50%, rgba(120,180,80,0.25) 6px, transparent 7px),radial-gradient(circle at 60% 75%, rgba(120,180,80,0.2) 6px, transparent 7px),radial-gradient(circle at 85% 40%, rgba(120,180,80,0.2) 6px, transparent 7px);background-repeat:repeat;background-size:200px 200px;pointer-events:none;}
-#app{width:90vw;max-width:90vw;height:55vh;max-height:60vh;overflow:auto;padding:64px;background:linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,255,232,0.68));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center;border:1px solid rgba(230,245,208,0.75);position:relative;z-index:1;}
+#app{width:90vw;max-width:90vw;height:80vh;max-height:90vh;overflow:auto;padding:64px;background:linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,255,232,0.68));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center;border:1px solid rgba(230,245,208,0.75);position:relative;z-index:1;box-sizing:border-box;}
 input{padding:20px;border-radius:14px;border:1px solid #ddd;width:60%;margin:20px auto;display:block;box-sizing:border-box;font-size:1.6em;text-align:center;}
 button{margin-top:16px;width:100%;padding:28px;border:none;border-radius:18px;background:linear-gradient(135deg,#a8e063,#ffd95a);color:#3a5a00;font-size:26px;cursor:pointer;font-weight:bold;box-shadow:0 6px 14px rgba(0,0,0,0.12);}
-label{display:block;text-align:left;margin:10px 0;line-height:1.5;}
+label{display:block;text-align:left;margin:10px 0;line-height:1.5;cursor:pointer;background:rgba(255,255,255,0.7);padding:14px 16px;border-radius:16px;}
+label input{width:auto;margin-right:12px;display:inline-block;font-size:inherit;}
 h2,h3,p{margin:0 0 10px 0;}
 .small-credit{position:absolute;right:22px;bottom:18px;text-align:center;color:#6b8e23;opacity:0.8;line-height:1.2;}
 .small-credit .tree{font-size:56px;margin-bottom:6px;display:block;}
@@ -17,14 +19,8 @@ h2,h3,p{margin:0 0 10px 0;}
 
 @media (max-width:768px){
   body{align-items:stretch;height:auto;}
-  #app{
-    width:100vw;
-    height:100vh;
-    max-width:100vw;
-    max-height:100vh;
-    border-radius:0;
-    padding:24px;
-  }
+  #app{width:100vw;height:100vh;max-width:100vw;max-height:100vh;border-radius:0;padding:24px;}
+  input{width:80%;}
 }
 </style>
 </head>
@@ -36,119 +32,151 @@ const app = document.getElementById('app');
 let userName = "";
 let current = 0;
 let answers = {};
-let lastResult = { tree:"", encourage:"", analysis:"", mbti:"", keywords:[] };
+let questions = [];
+let lastResult = { tree:"", encourage:"", analysis:"" };
 let scores = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
 
-const allQuestions=[
-{id:1,type:"single",text:"你点外卖时，如果已经挑了很久，临下单前又看到一家图片更好看的店，你通常会：",options:[{text:"还是会回去认真对比评价、配送时间和价格，确认之后再下单",axis:"S",weight:2},{text:"大概看一眼，觉得差不多就选原来的，不想再花太多时间",axis:"S",weight:1},{text:"很容易被新的图片和描述吸引，开始重新犹豫要不要换一家",axis:"N",weight:1},{text:"会突然完全改变主意，凭当下那一瞬间的感觉重新下单",axis:"N",weight:2}]},
-{id:2,type:"single",text:"和别人聊天时，如果话题突然断掉、气氛变得有点安静，你更可能会：",options:[{text:"主动再抛一个新话题，尽量把场子接住，不让气氛掉下去",axis:"E",weight:2},{text:"简单补一句，给彼此留个缓冲，不让冷场显得太明显",axis:"E",weight:1},{text:"接受这段安静，觉得也不是非得一直有人说话才舒服",axis:"I",weight:1},{text:"会明显感觉有点尴尬，开始在心里想自己刚刚是不是说错了什么",axis:"I",weight:2}]},
-{id:3,type:"single",text:"你看到一个很喜欢、但价格明显有点超出预期的东西时，最常见的反应是：",options:[{text:"先理性分析它到底值不值得，自己会不会真的长期用到它",axis:"T",weight:2},{text:"会先纠结一阵子，一边喜欢一边心疼钱，反复想要不要买",axis:"F",weight:1},{text:"如果当下真的很喜欢，可能会先买下来，之后再慢慢想值不值",axis:"P",weight:2},{text:"会强行劝自己放弃，告诉自己这不是必需品，先别冲动",axis:"J",weight:1}]},
-{id:4,type:"single",text:"在日常生活里，你最容易在什么样的时刻突然发呆、开始想很多事情：",options:[{text:"一个人走路的时候，脑子很容易自动飘走，想到很多别的事",axis:"N",weight:2},{text:"坐车或者等红灯的时候，会顺着眼前场景慢慢发散一点思绪",axis:"S",weight:1},{text:"等人的空档里，比较容易进入自己的小世界，不太注意周围",axis:"I",weight:1},{text:"其实很少发呆，更多时候会让自己保持在要做的事情上",axis:"T",weight:2}]},
-{id:5,type:"single",text:"如果别人和你约好了时间，但最后迟到了十几分钟，你更接近哪种反应：",options:[{text:"会先理解对方，觉得可能是真的被事情耽误了，也不想太计较",axis:"F",weight:2},{text:"心里会有一点不爽，但通常还是会接受，不太会当场表现出来",axis:"F",weight:1},{text:"会下意识开始算自己被耽误了多少时间，觉得安排被打乱了",axis:"T",weight:1},{text:"会直接调整后面的计划，把这件事当成新的现实来处理",axis:"T",weight:2}]},
-{id:6,type:"single",text:"你刷短视频、帖子或公众号内容时，通常更容易在哪类内容上停留久一点：",options:[{text:"实用信息、经验总结、方法技巧这类能直接用上的内容",axis:"S",weight:2},{text:"轻松娱乐、日常搞笑，能让自己短暂放空一下的内容",axis:"S",weight:1},{text:"很有情绪和氛围感的内容，会让自己忍不住多看几眼",axis:"F",weight:1},{text:"有创意、有表达感、让人觉得“这个角度很妙”的内容",axis:"N",weight:2}]},
-{id:7,type:"single",text:"当你收到别人发来的一大段长消息，内容里还夹杂着情绪、解释和很多细节时，你通常会：",options:[{text:"认真从头看到尾，再尽量完整地回应，不想让对方觉得自己被敷衍",axis:"F",weight:2},{text:"先抓重点，再挑重要的部分回复，保证效率但不至于失礼",axis:"T",weight:1},{text:"会想着晚一点再认真看，因为当下不一定有精力立刻接住这些信息",axis:"P",weight:1},{text:"容易拖很久才回复，甚至中途忘掉，等想起来时又有点不好意思",axis:"P",weight:2}]},
-{id:8,type:"single",text:"说到整理房间、桌面或者一些生活物品，你更接近下面哪种状态：",options:[{text:"会定期整理，哪怕不是特别整齐，也希望一切大体在可控范围内",axis:"J",weight:2},{text:"想起来的时候会顺手收一收，但不太会专门固定一个整理节奏",axis:"P",weight:1},{text:"通常是乱到自己受不了了才会集中整理一次，平时比较随缘",axis:"P",weight:2},{text:"日常其实一直维持得还不错，不太需要花很多力气重新收拾",axis:"J",weight:1}]},
-{id:9,type:"single",text:"如果要出门赴约、上班或办事，在时间安排上你平时更像哪一种：",options:[{text:"会尽量提前一点到，哪怕多等几分钟，也比赶时间更让自己安心",axis:"J",weight:2},{text:"通常可以刚刚好赶上，整体节奏还算稳，很少特别慌乱",axis:"J",weight:1},{text:"偶尔会晚一点，但通常还能接受，更多时候是边走边调整节奏",axis:"P",weight:1},{text:"经常容易把时间压得很紧，最后靠赶来勉强接住安排",axis:"P",weight:2}]},
-{id:10,type:"single",text:"面对一件还没开始、但你知道迟早要处理的事情时，你更容易：",options:[{text:"提前在心里做安排，哪怕还没动手，也希望自己对它有个基本计划",axis:"J",weight:2},{text:"更习惯走一步看一步，根据当时的情况灵活应对，不想太早框死自己",axis:"P",weight:2},{text:"大多时候会先看情况，觉得急了就做，不急就先放一放再说",axis:"P",weight:1},{text:"其实还是更习惯有个安排，心里知道大概怎么推进会更踏实一点",axis:"J",weight:1}]},
-{id:11,type:"multi",text:"你和朋友一起吃饭，结账时你发现对方明显少转了一点钱。金额不算特别大，但你心里还是会有感觉。这种情况下，你脑子里可能会同时闪过哪些想法？（可多选）",options:[{text:"算了，金额不大，真开口也许会显得自己太计较",axis:"F",weight:2},{text:"还是应该提醒一下，这不是钱多少的问题，而是边界感的问题",axis:"T",weight:2},{text:"这次先这样吧，下次再找机会平衡回来，自己心里有数就行",axis:"J",weight:1},{text:"嘴上不说，但心里会有一点不舒服，之后也会默默记住这件事",axis:"I",weight:1}]},
-{id:12,type:"multi",text:"你面前突然出现一个赚钱机会，回报看起来不错，但同时也伴随着明显的不确定和风险。还没做决定前，你心里更可能同时出现哪些反应？（可多选）",options:[{text:"有点心动，觉得这种机会不是天天都有，也许值得试一下",axis:"P",weight:2},{text:"会先认真评估风险、收益和自己能不能承受最坏结果",axis:"T",weight:2},{text:"虽然想试，但心里会隐隐不安，担心自己最后会承担不起后果",axis:"F",weight:1},{text:"也许放弃也没什么，错过一个机会不一定就是损失，稳定也很重要",axis:"I",weight:1}]},
-{id:13,type:"multi",text:"如果你借了一笔钱给别人，对方一直拖着没还，态度也不算特别积极。表面上你可能没说什么，但心里更可能同时在想哪些事？（可多选）",options:[{text:"有点不好意思主动去催，总怕一开口气氛就变得很尴尬",axis:"F",weight:2},{text:"本来就应该还，提醒一下并不过分，不能总让自己吃哑巴亏",axis:"T",weight:2},{text:"会后悔当时为什么没多想一点，自己又不是第一次因为心软吃亏",axis:"I",weight:1},{text:"这次过去就算了，但以后大概率不会再轻易借钱给这个人",axis:"J",weight:1}]},
-{id:14,type:"multi",text:"在工作或合作里，如果你做了很多事，但最后功劳更多落在了别人身上，这种时候你心里更可能会出现哪些反应？（可多选）",options:[{text:"想直接把事情讲清楚，不想让别人默认这部分努力跟自己无关",axis:"T",weight:2},{text:"会很难受，尤其不是为了抢风头，而是觉得自己的付出被轻飘飘地略过了",axis:"F",weight:2},{text:"会先观察局势和别人态度，再判断现在开口是不是合适",axis:"I",weight:1},{text:"这次先记住，以后做事会更谨慎，也会更注意留下能说明自己的证据",axis:"J",weight:1}]},
-{id:15,type:"multi",text:"如果你突然得到一笔意外之财，不至于彻底改变生活，但也足够让你做几个选择。你心里更可能同时冒出来哪些念头？（可多选）",options:[{text:"先拿一部分去花掉，让自己开心一下，毕竟这种机会本来就不常有",axis:"P",weight:2},{text:"还是想先存起来，至少让自己在接下来的生活里更有安全感",axis:"J",weight:2},{text:"可以认真分配一下，一部分留着，一部分满足当下需要，这样比较平衡",axis:"T",weight:1},{text:"会很想借这个机会好好奖励一下自己，补偿最近那些没说出口的辛苦",axis:"F",weight:1}]}
+const allQuestions = [
+  {id:1,type:"single",text:"深夜发完一条消息，对方一直没回，你会：",options:[{text:"反复看聊天记录，怀疑自己说错话",axis:"F",weight:2},{text:"觉得对方可能在忙，先放着",axis:"T",weight:1},{text:"刷别的内容转移注意力",axis:"P",weight:1},{text:"有点不爽但不再主动发",axis:"I",weight:2}]},
+  {id:2,type:"single",text:"周末本来计划学习或做事，但临时只想躺着，你会：",options:[{text:"纠结很久最后拖延",axis:"J",weight:1},{text:"直接放弃，改天再说",axis:"P",weight:2},{text:"一边玩一边内疚",axis:"F",weight:1},{text:"重新调整计划降低难度",axis:"T",weight:1}]},
+  {id:3,type:"single",text:"朋友突然夸你，你第一反应：",options:[{text:"觉得对方是不是客套",axis:"I",weight:2},{text:"笑着接但有点不自在",axis:"F",weight:1},{text:"开心接受并回应",axis:"E",weight:2},{text:"分析对方为什么这么说",axis:"T",weight:1}]},
+  {id:4,type:"single",text:"点外卖时纠结很久，你通常是：",options:[{text:"选了又改，最后随便点",axis:"P",weight:2},{text:"坚持选最优性价比",axis:"T",weight:2},{text:"看心情选喜欢的",axis:"F",weight:1},{text:"固定吃几样不变",axis:"J",weight:1}]},
+  {id:5,type:"single",text:"有人说了让你不舒服的话，你会：",options:[{text:"当场不说，事后反复想",axis:"I",weight:2},{text:"委婉表达不舒服",axis:"F",weight:1},{text:"直接指出问题",axis:"T",weight:2},{text:"假装没事但逐渐疏远",axis:"P",weight:1}]},
+  {id:6,type:"single",text:"发朋友圈后没人点赞，你会：",options:[{text:"开始怀疑是不是发得不好",axis:"F",weight:2},{text:"无所谓，自己开心就好",axis:"T",weight:1},{text:"偷偷删掉",axis:"I",weight:2},{text:"继续刷别的内容",axis:"P",weight:1}]},
+  {id:7,type:"single",text:"同事或同学表现比你好，你更可能：",options:[{text:"有点焦虑开始比较",axis:"F",weight:2},{text:"分析对方哪里做得好",axis:"T",weight:2},{text:"觉得各有节奏",axis:"P",weight:1},{text:"默默观察不说",axis:"I",weight:1}]},
+  {id:8,type:"single",text:"约好出门但临时下雨，你会：",options:[{text:"有点烦躁，情绪被影响",axis:"F",weight:2},{text:"快速改方案",axis:"T",weight:2},{text:"顺其自然，改天再说",axis:"P",weight:1},{text:"还是按原计划进行",axis:"J",weight:1}]},
+  {id:9,type:"single",text:"截止日期快到了，你通常：",options:[{text:"提前完成比较安心",axis:"J",weight:2},{text:"拖到最后集中爆发",axis:"P",weight:2},{text:"边做边拖",axis:"P",weight:1},{text:"按节奏逐渐推进",axis:"J",weight:1}]},
+  {id:10,type:"single",text:"刷到别人生活很精彩的内容，你会：",options:[{text:"开始反思自己",axis:"I",weight:2},{text:"有点羡慕甚至焦虑",axis:"F",weight:2},{text:"觉得每个人不同",axis:"T",weight:1},{text:"刷一会就忘了",axis:"P",weight:1}]},
+  {id:11,type:"single",text:"进入一个陌生环境时，你会：",options:[{text:"主动观察并逐渐融入",axis:"I",weight:2},{text:"尝试主动交流",axis:"E",weight:2},{text:"先了解规则再行动",axis:"T",weight:1},{text:"有点不安但适应",axis:"F",weight:1}]},
+  {id:12,type:"single",text:"做决定时，你更依赖：",options:[{text:"当下感觉",axis:"F",weight:2},{text:"理性分析",axis:"T",weight:2},{text:"看情况变化",axis:"P",weight:1},{text:"既有经验",axis:"J",weight:1}]},
+  {id:13,type:"single",text:"你打开待办清单时的状态：",options:[{text:"不知道从哪开始",axis:"N",weight:2},{text:"挑简单的先做",axis:"P",weight:2},{text:"按顺序执行",axis:"J",weight:1},{text:"拖着不想看",axis:"F",weight:1}]},
+  {id:14,type:"single",text:"你开始一件新事情通常：",options:[{text:"想清楚才开始",axis:"I",weight:2},{text:"先做再说",axis:"P",weight:2},{text:"边做边调整",axis:"J",weight:1},{text:"容易被打断",axis:"P",weight:1}]},
+  {id:15,type:"single",text:"别人评价你，你更在意：",options:[{text:"是不是喜欢我",axis:"F",weight:2},{text:"是不是认可我能力",axis:"T",weight:2},{text:"整体感觉",axis:"E",weight:1},{text:"长期看法",axis:"J",weight:1}]},
+  {id:16,type:"single",text:"犯错之后你更可能：",options:[{text:"反复自责",axis:"J",weight:2},{text:"很快放过自己",axis:"P",weight:2},{text:"情绪波动",axis:"F",weight:1},{text:"总结经验",axis:"T",weight:1}]},
+  {id:17,type:"single",text:"别人找你帮忙但你很忙，你会：",options:[{text:"不好意思拒绝",axis:"F",weight:2},{text:"理性判断是否答应",axis:"T",weight:2},{text:"拖着不回应",axis:"P",weight:1},{text:"简单拒绝",axis:"I",weight:1}]},
+  {id:18,type:"single",text:"计划被打乱时，你会：",options:[{text:"情绪受影响",axis:"F",weight:2},{text:"重新规划",axis:"T",weight:2},{text:"干脆摆烂",axis:"P",weight:1},{text:"坚持原计划",axis:"J",weight:1}]},
+  {id:19,type:"single",text:"你的一天结束时最常感觉：",options:[{text:"脑子停不下来",axis:"I",weight:2},{text:"情绪有点累",axis:"F",weight:2},{text:"身体累但轻松",axis:"P",weight:1},{text:"完成任务的满足",axis:"J",weight:1}]},
+  {id:20,type:"single",text:"你更容易忽略：",options:[{text:"自己的情绪",axis:"F",weight:2},{text:"环境变化",axis:"S",weight:2},{text:"他人感受",axis:"T",weight:1},{text:"时间流逝",axis:"P",weight:1}]},
+  {id:21,type:"single",text:"你更喜欢的生活状态：",options:[{text:"稳定规律",axis:"J",weight:2},{text:"自由变化",axis:"P",weight:2},{text:"舒服优先",axis:"F",weight:1},{text:"效率优先",axis:"T",weight:1}]},
+  {id:22,type:"single",text:"被忽视时你会：",options:[{text:"有点失落",axis:"E",weight:2},{text:"怀疑自己",axis:"F",weight:2},{text:"无所谓",axis:"T",weight:1},{text:"逐渐疏远",axis:"I",weight:1}]},
+  {id:23,type:"single",text:"你经常卡在：",options:[{text:"想太多",axis:"I",weight:2},{text:"情绪影响",axis:"F",weight:2},{text:"行动过快",axis:"P",weight:1},{text:"控制太多",axis:"J",weight:1}]},
+  {id:24,type:"single",text:"面对长期目标，你通常：",options:[{text:"不断调整",axis:"P",weight:2},{text:"坚持执行",axis:"J",weight:2},{text:"看感觉推进",axis:"F",weight:1},{text:"优化路径",axis:"T",weight:1}]},
+  {id:25,type:"single",text:"如果没有人评价你，你会：",options:[{text:"有点不安",axis:"F",weight:2},{text:"更自在",axis:"I",weight:2},{text:"继续做事",axis:"T",weight:1},{text:"想找反馈",axis:"E",weight:1}]}
 ];
 
-let questions = [];
+const allTrees = ["银杏","松树","樱花树","橡树","柳树","竹子","枫树","榕树","柏树","水杉","白桦","桂花树","紫藤","海棠树","桃树","香樟","梧桐","棕榈树","冷杉","云杉","铁杉","栎树","槐树","榆树","杉木","落羽杉","红杉","构树","乌桕","合欢树","石榴树","无花果树","杏树","樱桃树","女贞树","冬青","海桐","泡桐","楝树","紫薇树"];
 
-const allTrees=["银杏","松树","樱花","橡树","柳树","竹子","枫树","榕树","柏树","水杉","白桦","桂花","紫藤","海棠","桃树","香樟","梧桐","棕榈","冷杉","云杉","铁杉","栎树","槐树","榆树","杉木","落羽杉","红杉","构树","乌桕","合欢","石榴","无花果","杏树","樱桃树","女贞","冬青","海桐","泡桐","楝树","榆叶梅","碧桃","紫薇","栾树","朴树","青冈","柞树","侧柏","龙柏","刺柏","油松","黑松","元宝枫","鸡爪槭","三角枫","黄栌","红枫","椰子树","槟榔","蒲葵","海枣","油棕","山茶","雪松","朴槿","山楂","槭树","胡杨"];
+const treeProfiles = {
+  "银杏": { summary: "你像银杏，节奏缓而稳。", detail: "你习惯在时间里打磨自己，不急于被看见，却会在不知不觉中完成积累。你对关系谨慎而长情，越了解越能显出温度与重量。你会逐渐成为很好的一棵树。", social: "熟人松弛温和，陌生人安静克制。", mask: "别人觉得你慢，其实你在沉淀。", pain: "你付出很多，但不常被及时回应。" },
+  "松树": { summary: "你像松树，稳定有韧性。", detail: "你能在压力下保持结构，不轻易动摇。你更看重长期与可靠，遇事先稳住再行动。你会逐渐成为很好的一棵树。", social: "熟人直接真实，陌生人边界清晰。", mask: "别人觉得你强，其实你也会疲惫。", pain: "你承担很多，但不总被注意。" },
+  "樱花树": { summary: "你像樱花树，细腻而明亮。", detail: "你对当下感受很敏锐，能被美好触动，也容易被忽视刺痛。你认真对待每一次相遇与表达，这种真诚会被记住。你会逐渐成为很好的一棵树。", social: "熟人柔软外露，陌生人收敛礼貌。", mask: "别人觉得你轻盈，其实你很认真。", pain: "你的认真，有时被当成理所当然。" },
+  "橡树": { summary: "你像橡树，厚重而持久。", detail: "你更看重结构与结果，愿意用时间换确定性。你不追逐短期热度，稳步推进自己的方向，越到后期越显力量。你会逐渐成为很好的一棵树。", social: "熟人踏实可靠，陌生人理性克制。", mask: "别人觉得你慢，其实你在铺路。", pain: "你的耐心，常被误解为迟缓。" },
+  "柳树": { summary: "你像柳树，柔中有度。", detail: "你善于在变化中调整自己，用温和的方式处理复杂关系。你不喜欢对抗，但并不失去边界，懂得在关键时刻收紧与坚持。你会逐渐成为很好的一棵树。", social: "熟人轻松随和，陌生人保留距离。", mask: "别人觉得你好说话，其实你有原则。", pain: "你的退让，容易被过度使用。" },
+  "竹子": { summary: "你像竹子，节节向上。", detail: "你在看不见的地方持续生长，外界难以衡量你的进度。你重视内在结构的完善，一旦时机到来，会迅速拔高与展开。你会逐渐成为很好的一棵树。", social: "熟人自然，陌生人克制。", mask: "别人觉得你普通，其实你在蓄力。", pain: "你的过程，常被忽略。" },
+  "枫树": { summary: "你像枫树，阶段分明。", detail: "你的人生带有明显的周期感，每一段变化都在重塑你。你对情绪与环境的感知细致，这让你的表达具有独特的层次。你会逐渐成为很好的一棵树。", social: "熟人情绪丰富，陌生人收敛。", mask: "别人觉得你波动，其实你在更新。", pain: "你的转变，外人难以理解。" },
+  "榕树": { summary: "你像榕树，承接与延展。", detail: "你有很强的包容力，能为他人提供稳定的支点。你擅长连接与维系，但也需要为自己保留空间与养分。你会逐渐成为很好的一棵树。", social: "熟人温暖包容，陌生人稳定礼貌。", mask: "别人觉得你好相处，其实你也会累。", pain: "你给予很多，却少有回流。" },
+  "柏树": { summary: "你像柏树，清直可靠。", detail: "你重视原则与一致性，做事有边界与标准。你不轻易改变立场，但会在事实面前修正路径。你会逐渐成为很好的一棵树。", social: "熟人可靠，陌生人克制。", mask: "别人觉得你冷，其实你很稳。", pain: "你的坚持，有时显得孤独。" },
+  "水杉": { summary: "你像水杉，安静生长。", detail: "你更偏向长期积累与渐进改进，愿意把时间用在打基础上。你不急于表达，但结果会替你发声。你会逐渐成为很好的一棵树。", social: "熟人平和，陌生人低调。", mask: "别人觉得你普通，其实你在累积。", pain: "你的价值，往往需要时间显现。" },
+  "白桦": { summary: "你像白桦，清晰有界。", detail: "你对自我与他人的边界感明确，能保持干净的关系结构。你不喜欢模糊与消耗，倾向于简单直接的互动。你会逐渐成为很好的一棵树。", social: "熟人真诚，陌生人简洁。", mask: "别人觉得你冷淡，其实你在保护秩序。", pain: "你的边界，常被误解为距离。" },
+  "桂花树": { summary: "你像桂花树，低调留香。", detail: "你不依赖声量来证明自己，更倾向于在关键时刻呈现价值。你的影响力是缓慢扩散的，被记住往往在事后。你会逐渐成为很好的一棵树。", social: "熟人温和，陌生人低调。", mask: "别人觉得你普通，其实你有余味。", pain: "你的闪光，不总在台前。" },
+  "紫藤": { summary: "你像紫藤，延展而专注。", detail: "你在关系与目标上会持续投入，愿意沿着一条路径深入。你需要合适的支撑与环境，一旦匹配就会展开。你会逐渐成为很好的一棵树。", social: "熟人黏合度高，陌生人观察。", mask: "别人觉得你依附，其实你在选择结构。", pain: "你的投入，需要被对等回应。" },
+  "海棠树": { summary: "你像海棠树，体面而柔和。", detail: "你注重表达的分寸与美感，能在复杂情境中保持得体。你既有温度也有结构，善于平衡关系。你会逐渐成为很好的一棵树。", social: "熟人温柔，陌生人礼貌。", mask: "别人觉得你轻松，其实你很用心。", pain: "你的用心，常被当作自然。" },
+  "桃树": { summary: "你像桃树，鲜活直接。", detail: "你对喜欢与不喜欢都有清晰反应，行动带有生命力。你更愿意靠近真实与当下，这让你具有感染力。你会逐渐成为很好的一棵树。", social: "熟人外放，陌生人有距离。", mask: "别人觉得你冲动，其实你很真。", pain: "你的真诚，有时不被珍惜。" },
+  "香樟": { summary: "你像香樟，稳定安心。", detail: "你能为周围提供持续的稳定感，做事有延续性与耐力。你不轻易波动，是团队中的基石型存在。你会逐渐成为很好的一棵树。", social: "熟人可靠，陌生人稳重。", mask: "别人觉得你理所当然，其实你在支撑。", pain: "你的稳定，常被忽略。" },
+  "梧桐": { summary: "你像梧桐，空间感强。", detail: "你重视边界与留白，懂得为自己与他人保留空间。你不喜欢被过度占用，更倾向于清晰的互动方式。你会逐渐成为很好的一棵树。", social: "熟人松弛，陌生人有界。", mask: "别人觉得你疏离，其实你在维护空间。", pain: "你的边界，常被误读。" },
+  "棕榈树": { summary: "你像棕榈树，适应力强。", detail: "你能在多种环境中找到生存方式，调整策略以匹配变化。你不执着单一路径，重在保持流动与延续。你会逐渐成为很好的一棵树。", social: "熟人灵活，陌生人观察。", mask: "别人觉得你随性，其实你在适配。", pain: "你的灵活，有时被当成不坚定。" },
+  "冷杉": { summary: "你像冷杉，目标清晰。", detail: "你把精力集中在关键点上，减少无效消耗。你偏好清晰的结构与路径，一旦确定就会持续推进。你会逐渐成为很好的一棵树。", social: "熟人直接，陌生人简洁。", mask: "别人觉得你冷，其实你在专注。", pain: "你的专注，容易被误解为疏离。" },
+  "云杉": { summary: "你像云杉，结构严整。", detail: "你擅长把复杂问题拆解与重组，让系统变得有序。你重视逻辑与效率，在混乱中建立秩序。你会逐渐成为很好的一棵树。", social: "熟人理性，陌生人克制。", mask: "别人觉得你刻板，其实你在整理世界。", pain: "你的方法，不总被理解。" },
+  "铁杉": { summary: "你像铁杉，底线明确。", detail: "你对原则有清晰判断，不轻易让步。你能在关键时刻守住边界，也愿意承担由此带来的代价。你会逐渐成为很好的一棵树。", social: "熟人坚定，陌生人冷静。", mask: "别人觉得你强硬，其实你在守护。", pain: "你的坚持，常带来孤独。" },
+  "栎树": { summary: "你像栎树，耐久坚实。", detail: "你有很强的承压能力，面对长期任务能持续输出。你不依赖情绪驱动，而是依靠习惯与结构前行。你会逐渐成为很好的一棵树。", social: "熟人稳定，陌生人克制。", mask: "别人觉得你迟缓，其实你在稳进。", pain: "你的耐力，不被即时奖励。" },
+  "槐树": { summary: "你像槐树，等待有度。", detail: "你知道何时出手更有效，愿意为更合适的时机保留资源。你不盲动，但会在窗口出现时迅速行动。你会逐渐成为很好的一棵树。", social: "熟人温和，陌生人观察。", mask: "别人觉得你被动，其实你在判断。", pain: "你的等待，常被误解。" },
+  "榆树": { summary: "你像榆树，踏实接地。", detail: "你重视现实与可行性，偏好稳妥路径。你能把事情落到具体执行上，让计划真正发生。你会逐渐成为很好的一棵树。", social: "熟人随和，陌生人务实。", mask: "别人觉得你普通，其实你很可靠。", pain: "你的价值，常在细节里。" },
+  "杉木": { summary: "你像杉木，直线前进。", detail: "你对方向一旦确定就会持续推进，减少横向干扰。你重视效率与节奏，愿意用行动替代解释。你会逐渐成为很好的一棵树。", social: "熟人直接，陌生人简洁。", mask: "别人觉得你单一，其实你在聚焦。", pain: "你的路径，缺少理解。" },
+  "落羽杉": { summary: "你像落羽杉，温柔坚定。", detail: "你能在环境变化中保持内在稳定，同时允许外在调整。你不对抗变化，而是与之共处。你会逐渐成为很好的一棵树。", social: "熟人柔和，陌生人克制。", mask: "别人觉得你温和，其实你很坚定。", pain: "你的坚持，常被忽略。" },
+  "红杉": { summary: "你像红杉，视野长远。", detail: "你更关注长期趋势与大尺度结构，愿意为更远的目标做准备。你不急于眼前收益，重在积累与放大。你会逐渐成为很好的一棵树。", social: "熟人沉稳，陌生人理性。", mask: "别人觉得你遥远，其实你在布局。", pain: "你的远见，不易被即时理解。" },
+  "构树": { summary: "你像构树，生命力强。", detail: "你具有很强的恢复能力，即使遭遇打断也能重新开始。你不被一次结果定义，能在不同条件下继续生长。你会逐渐成为很好的一棵树。", social: "熟人自然，陌生人随性。", mask: "别人觉得你随便，其实你在重建。", pain: "你的重来，少被鼓励。" },
+  "乌桕": { summary: "你像乌桕，适配变化。", detail: "你能根据环境调整策略，在不同阶段呈现不同面貌。你不执着单一状态，重在保持有效。你会逐渐成为很好的一棵树。", social: "熟人灵活，陌生人观察。", mask: "别人觉得你变化，其实你在优化。", pain: "你的转变，常被误读。" },
+  "合欢树": { summary: "你像合欢树，让人放松。", detail: "你能为周围带来情绪缓冲，降低紧张与对抗。你重视关系中的舒适度与连接感。你会逐渐成为很好的一棵树。", social: "熟人温暖，陌生人友好。", mask: "别人觉得你轻松，其实你在调和。", pain: "你的付出，常被忽视。" },
+  "石榴树": { summary: "你像石榴树，内里充盈。", detail: "你更重视内在的丰富与成熟，不急于外显。你会在合适时机打开自己，让内容被看见。你会逐渐成为很好的一棵树。", social: "熟人开放，陌生人保留。", mask: "别人觉得你内敛，其实你很满。", pain: "你的内在，不总被看见。" },
+  "无花果树": { summary: "你像无花果树，真实直接。", detail: "你不依赖装饰来表达价值，更愿意以实际内容说话。你对真实有坚持，这让你稳定而可信。你会逐渐成为很好的一棵树。", social: "熟人自然，陌生人克制。", mask: "别人觉得你朴素，其实你很有料。", pain: "你的价值，不被表面衡量。" },
+  "杏树": { summary: "你像杏树，率真明快。", detail: "你表达直接，行动轻快，不喜欢复杂的弯绕。你更接近当下的感受，这让你显得鲜活。你会逐渐成为很好的一棵树。", social: "熟人外放，陌生人有距。", mask: "别人觉得你简单，其实你很清楚。", pain: "你的直接，容易被误会。" },
+  "樱桃树": { summary: "你像樱桃树，敏锐清醒。", detail: "你对细节与关系变化有很强感知，能快速捕捉信号。你会据此调整互动方式，保持自我。你会逐渐成为很好的一棵树。", social: "熟人细腻，陌生人观察。", mask: "别人觉得你多想，其实你很敏锐。", pain: "你的感知，常被忽视。" },
+  "女贞树": { summary: "你像女贞树，持久耐看。", detail: "你重视长期稳定的积累，不依赖短期刺激。你会在时间中显出价值，被持续看见。你会逐渐成为很好的一棵树。", social: "熟人稳定，陌生人克制。", mask: "别人觉得你平淡，其实你很稳。", pain: "你的长期性，不被即时奖励。" },
+  "冬青": { summary: "你像冬青，防线清晰。", detail: "你对安全与边界有敏感度，会提前建立保护机制。你不轻易让外界侵入核心区域。你会逐渐成为很好的一棵树。", social: "熟人放松，陌生人有防。", mask: "别人觉得你有刺，其实你在保护。", pain: "你的防御，常被误解。" },
+  "海桐": { summary: "你像海桐，稳定舒展。", detail: "你偏好稳定环境中的持续发展，重视舒适与可持续。你会在合适的节奏中逐渐展开。你会逐渐成为很好的一棵树。", social: "熟人温和，陌生人低调。", mask: "别人觉得你保守，其实你在稳住。", pain: "你的节奏，常被催促。" },
+  "泡桐": { summary: "你像泡桐，节奏感强。", detail: "你对启动与推进有自己的节律，懂得何时加速何时停顿。你不盲从外界节奏。你会逐渐成为很好的一棵树。", social: "熟人自然，陌生人观察。", mask: "别人觉得你慢，其实你在调速。", pain: "你的节律，少被理解。" },
+  "楝树": { summary: "你像楝树，气质独特。", detail: "你有自己的审美与表达方式，不完全依赖主流标准。你更在意被真正理解。你会逐渐成为很好的一棵树。", social: "熟人自在，陌生人疏离。", mask: "别人觉得你奇怪，其实你很自洽。", pain: "你的独特，常被忽略。" },
+  "紫薇树": { summary: "你像紫薇树，恢复力强。", detail: "你在经历波动后能逐步回到自己的轨道，修复能力出色。你会把经历转化为经验。你会逐渐成为很好的一棵树。", social: "熟人温和，陌生人克制。", mask: "别人觉得你没事，其实你在修复。", pain: "你的恢复过程，少被看见。" }
+};
 
 function startPage(){
-  app.innerHTML=`
-  <h2 style="margin-bottom:60px">✨🌳 测测你是一棵什么树~~ 🌟🌱</h2>
-  <input placeholder="输入你的昵称" oninput="userName=this.value" />
-  <button onclick="startTest()">开始测试</button>
-  <div class="small-credit">
-    <span class="tree">🌳</span>
-    <div class="text">由 写代码新手培根 开发</div>
-  </div>`;
+  app.innerHTML = `
+    <h2 style="margin-bottom:60px">✨🌳 测测你是一棵什么树~~ 🌟🌱</h2>
+    <input id="nameInput" placeholder="输入你的昵称" oninput="window.userName=this.value" />
+    <button onclick="startTest()">开始测试</button>
+    <div class="small-credit">
+      <span class="tree">🌳</span>
+      <div class="text">由 写代码新手培根 开发</div>
+    </div>`;
 }
 
 function startTest(){
-  userName = (userName || '').trim();
-  if(!userName) userName = '你';
+  const inputEl = document.getElementById('nameInput');
+  const inputValue = inputEl ? inputEl.value.trim() : '';
+  userName = inputValue || '你';
   current = 0;
   answers = {};
-
-  const shuffled = [...allQuestions].sort(()=>Math.random()-0.5);
-  questions = shuffled.slice(0,12);
-
+  const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+  questions = shuffled.slice(0, 12);
   render();
 }
 
-function old_startTest_backup(){
-  userName = (userName || '').trim();
-  if(!userName) userName = '你';
-  current = 0;
-  answers = {};
-  render();
-}
-
-function save(id,i){
-  const q=questions.find(q=>q.id===id);
-  if(q.type==='single') answers[id]=[i];
-  else{
-    if(!answers[id]) answers[id]=[];
-    if(answers[id].includes(i)) answers[id]=answers[id].filter(x=>x!==i);
-    else answers[id].push(i);
-  }
-}
-
-function autoNext(type){
-  if(type==='single') setTimeout(()=>next(),200);
-}
-
-function prev(){
-  if(current>0){ current--; render(); }
-}
-
-function next(){
-  if(current<questions.length-1){ current++; render(); }
-  else submit();
-}
+function save(id, i){ answers[id] = [i]; }
+function autoNext(){ setTimeout(() => next(), 200); }
+function prev(){ if(current > 0){ current -= 1; render(); } }
+function next(){ if(current < questions.length - 1){ current += 1; render(); } else { submit(); } }
 
 function render(){
-  const q=questions[current];
-  const progress=Math.round((current+1)/questions.length*100);
-  app.innerHTML=`
+  if(!questions.length){ startPage(); return; }
+  const q = questions[current];
+  const progress = Math.round((current + 1) / questions.length * 100);
+  app.innerHTML = `
     <div style="height:16px;background:#e6f5d0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
       <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#a8e063,#ffd95a);transition:width 0.3s;"></div>
     </div>
-    <div style="font-size:24px;color:#6b8e23;margin-bottom:16px;font-weight:bold">第 ${current+1} / ${questions.length} 题</div>
+    <div style="font-size:24px;color:#6b8e23;margin-bottom:16px;font-weight:bold">第 ${current + 1} / ${questions.length} 题</div>
     <h3>${q.text}</h3>
-    ${q.options.map((o,i)=>`
+    ${q.options.map((o, i) => `
       <label>
-        <input name="q${q.id}" type="${q.type==='multi'?'checkbox':'radio'}" onchange="save(${q.id},${i}); autoNext('${q.type}')" ${answers[q.id]?.includes(i)?'checked':''}/>
+        <input name="q${q.id}" type="radio" onchange="save(${q.id},${i}); autoNext()" ${answers[q.id]?.includes(i) ? 'checked' : ''} />
         ${o.text}
       </label>`).join('')}
     <button onclick="prev()">上一题</button>
-    <button onclick="next()">${current===questions.length-1?'查看结果':'下一题'}</button>`;
+    <button onclick="next()">${current === questions.length - 1 ? '查看结果' : '下一题'}</button>`;
 }
 
 function calc(){
-  scores={E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
-  questions.forEach(q=>{
-    (answers[q.id]||[]).forEach(i=>{
-      scores[q.options[i].axis]+=q.options[i].weight;
+  scores = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
+  questions.forEach((q) => {
+    (answers[q.id] || []).forEach((i) => {
+      const opt = q.options[i];
+      if(opt && Object.prototype.hasOwnProperty.call(scores, opt.axis)) {
+        scores[opt.axis] += opt.weight;
+      }
     });
   });
 }
 
 function getType(){
-  return (scores.E>=scores.I?'E':'I') + (scores.S>=scores.N?'S':'N') + (scores.T>=scores.F?'T':'F') + (scores.J>=scores.P?'J':'P');
+  return (scores.E >= scores.I ? 'E' : 'I') + (scores.S >= scores.N ? 'S' : 'N') + (scores.T >= scores.F ? 'T' : 'F') + (scores.J >= scores.P ? 'J' : 'P');
 }
 
 function hash(str){
-  let h=0;
-  for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;}
+  let h = 0;
+  for(let i = 0; i < str.length; i += 1){
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
   return Math.abs(h);
 }
 
@@ -158,127 +186,218 @@ function pickTree(){
 }
 
 function getEncourage(tree){
-  const base=[
-    "慢一点也在长大","你正在变成更稳的人","你的节奏本来就对","你会被时间看见","你已经在变强了","你有自己的生长路径","你会慢慢发光","你值得被好好对待","你比你想的更稳","你会越来越清晰","你在积累自己的力量","你会长成很好的样子","你有自己的边界与温度","你不需要被所有人理解","你在做对的事","你在向上生长","你会更有底气","你在慢慢变轻松","你会被温柔接住","你值得被等待","你在变得更有分寸","你会越来越稳定","你会找到自己的位置","你在成为更清醒的人","你在学会保护自己","你会更自在","你在变得更真实","你会更从容","你在慢慢开阔","你会更坚定","你在长出自己的答案","你会更有力量","你在慢慢被理解","你会更有安全感","你在学会取舍","你会更自洽","你在变得更柔软","你会更有方向","你在慢慢被看见","你会更安心","你在走对的路上","你会更清楚自己要什么","你在建立自己的秩序","你会更有边界","你在变得更笃定","你会更有耐心","你在慢慢变好","你会更有余地","你在成长成更好的自己","你会更有掌控感","你在变得更勇敢","你会更有选择权","你在慢慢安定下来","你会更有光","你在学会与自己相处","你会更有弹性","你在变得更有分寸","你会更有定力","你在慢慢打开","你会更温和而坚定","你在长成自己的样子","你会更自在地活","你在变得更清晰","你会更被自己喜欢","你在慢慢靠近想要的生活","你会更有余裕"
-  ];
-  const phrase=base[hash(userName+tree)%base.length];
+  const treeEncourage = {
+    "银杏":["慢一点也会刚刚好","你会被时间温柔地看见"],
+    "松树":["你比风更稳","你扛住的都会变成力量"],
+    "樱花树":["你认真地活着本身就很美","你的感受很珍贵"],
+    "橡树":["你会把路走成路","你的稳会赢到最后"],
+    "柳树":["柔软也是一种力量","你会在变化里站稳"],
+    "竹子":["你有自己的节节生长","逐渐来你会很强"],
+    "枫树":["你会在变化里发光","你的敏感是天赋"],
+    "榕树":["你能接住很多人，也别忘了抱抱自己","你的温柔有重量"],
+    "柏树":["你是可以被信任的人","稳定本身就是稀缺"],
+    "水杉":["你会越来越可靠","时间会替你证明"],
+    "白桦":["你的边界很干净","你值得被尊重"],
+    "桂花树":["你在悄悄发光","香气会被人记住"],
+    "紫藤":["你会遇到对的人","你的投入会被回应"],
+    "海棠树":["你很体面也很真诚","你会被温柔对待"],
+    "桃树":["你活得很鲜活","喜欢就继续靠近"],
+    "香樟":["你给人安心的力量","你会一直稳"],
+    "梧桐":["你的空间感是边界","你会更自在"],
+    "棕榈树":["你适应一切的能力很强","你会找到位置"],
+    "冷杉":["你把力气用在刀刃上","你会更清晰"],
+    "云杉":["你会把世界理顺","你的结构很有用"],
+    "铁杉":["你会守住底线","你很清醒"],
+    "栎树":["你很能扛","你会走得更远"],
+    "槐树":["你等得起","你会等到对的时机"],
+    "榆树":["你很接地气","你会更稳"],
+    "杉木":["你会一路向前","你的方向是对的"],
+    "落羽杉":["你温柔也坚定","你会被理解"],
+    "红杉":["你看得更远","你会赢在后面"],
+    "构树":["你生命力很强","你不怕重来"],
+    "乌桕":["你会适应变化","你会更灵活"],
+    "合欢树":["你让人放松","你很温暖"],
+    "石榴树":["你内里很满","你会逐渐打开"],
+    "无花果树":["你很真实","你会更有价值"],
+    "杏树":["你很率真","你会活得更轻松"],
+    "樱桃树":["你很敏锐","你会更看清人"],
+    "女贞树":["你很耐久","你会被长期看见"],
+    "冬青":["你有防线","你会更安全"],
+    "海桐":["你适合稳定","你会更舒服"],
+    "泡桐":["你会找到节奏","你会更稳住"],
+    "楝树":["你有自己的味道","你会被懂的人喜欢"],
+    "紫薇树":["你会恢复","你会越来越好"]
+  };
+  const arr = treeEncourage[tree] || ["你会更好", "你会被看见"];
+  const phrase = arr[hash(userName + tree) % arr.length];
   return `${userName}${phrase} 🌱`;
 }
 
 function getAnalysis(tree){
-  const mbtiList=["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
-  const keywordPool=["稳定","边界","慢热","真实","感知","长期主义","韧性","独立","克制","观察","表达","连接","秩序","自由","情绪力","判断力","适应","耐心","安全感","行动力","敏感","果断","节奏","松弛","共情","理性","直觉","抗压","持续","温和","锋利","包容","清醒","探索","专注","保留","外放","内敛","成长","结构","变化","坚持","自洽","效率","洞察","热烈","分寸","边缘感","控制感","生命力"];
-
-  const h=hash(tree+JSON.stringify(answers));
-  const mbti=mbtiList[h%mbtiList.length];
-
-  const kw=[]; let used={}; let seed=h;
-  while(kw.length<5){
-    seed=(seed*9301+49297)%233280;
-    const idx=seed%keywordPool.length;
-    if(!used[idx]){kw.push(keywordPool[idx]); used[idx]=true;}
-  }
-
-  const treeTraits={
-    "松树":"耐寒稳定型","樱花":"情绪感知型","竹子":"韧性成长型","榕树":"包容支撑型","银杏":"慢热积累型","枫树":"变化感知型"
+  const mbti = getType();
+  const p = treeProfiles[tree] || {
+    summary: `你像${tree}，有自己的方式。`,
+    detail: `你在不同情境中会找到适合自己的节奏，也会根据环境进行调整。你会逐渐成为很好的一棵树。`,
+    social: `在熟悉与陌生环境中，你会自然呈现不同状态。`,
+    mask: `他人看到的是你的一部分，更多面向会在不同关系中呈现。`,
+    pain: `有些状态不容易被外界察觉，但它们同样真实存在。`
   };
 
-  const trait=treeTraits[tree]||"自洽生长型";
+  const hiddenMap = {
+    I: "你其实比看起来更渴望被理解。",
+    E: "你其实更需要回应。",
+    N: "你其实更容易想太多。",
+    S: "你其实更在意安全感。",
+    T: "你其实比看起来更有情绪。",
+    F: "你其实比看起来更理性。",
+    J: "你其实更害怕失控。",
+    P: "你其实更需要方向。"
+  };
+  const hidden = hiddenMap[mbti[0]] || "你其实有很多没说出口的状态。";
+  const scene = `你像一棵${tree}，在自己的位置逐渐生长。`;
 
-  const sentences=[
-    `你像${tree}一样，属于${trait}的人，做事不急但很稳。`,
-    `你更习惯在行动前观察，这让你很少做出后悔的选择。`,
-    `在人际关系里，你不是最外放的，但你很真实。`,
-    `你对边界和情绪有感知，这是一种成熟能力。`,
-    `有时你会想太多，提前消耗精力。`,
-    `慢一点没关系，你本来就不是靠速度取胜。`
-  ];
-
-  const shuffled=[...sentences].sort(()=>Math.random()-0.5);
-  const text=shuffled.slice(0,5).join('');
-
-  return `🌲 MBTI倾向：${mbti}
-
-🌿 性格关键词：
-${kw.join(' / ')}
-
-${text}`;
+  return [
+    p.summary,
+    p.detail,
+    `👀 别人眼里的你 vs 真实的你\n${p.mask}`,
+    `💭 ${hidden}`,
+    `🌿 ${scene}`,
+    `🌲 MBTI：${mbti}`,
+    `👥 人群中的你\n${p.social}`,
+    `🫧 ${p.pain}`
+  ].join('\n\n');
 }
 
 function submit(){
   calc();
-  const tree=pickTree();
-  const text=getEncourage(tree);
-  const analysis=getAnalysis(tree);
-  lastResult={tree,encourage:text,analysis};
-  const parts=analysis.split('\n\n');
-  const summary=parts[1]||analysis;
-  const mbtiLine=parts[2]||'';
-  const keywordTitle=parts[3]||'';
-  const keywordLine=parts[4]||'';
+  const tree = pickTree();
+  const text = getEncourage(tree);
+  const analysis = getAnalysis(tree);
+  lastResult = {tree, encourage:text, analysis};
 
-  app.innerHTML=`
-  <div id="resultCard" onclick="hugEffect('${tree}')">
-    <h2>🎫 领取你的专属小树铭牌</h2>
-    <h3 style="margin-top:10px">${userName} 类似一棵${tree} 🌳</h3>
-    <p style="margin-top:10px;font-size:22px;font-weight:bold;color:#3f5f12">${mbtiLine}</p>
-    <p style="margin-top:10px;font-weight:bold">🌿 性格概括</p>
-    <p style="line-height:1.6">${summary}</p>
-    <p style="margin-top:10px;font-size:14px;color:#4f6f1f">${keywordTitle}</p>
-    <p style="margin-top:4px;font-size:14px;line-height:1.6;color:#4f6f1f">${keywordLine}</p>
-    <p style="margin-top:12px">🌱 ${text}</p>
-  </div>
-  <div id="hugText" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.8);font-size:28px;font-weight:bold;color:#3a5a00;opacity:0;transition:all 0.4s;pointer-events:none;"></div>
-  <p style="font-size:14px;opacity:0.6">微信公众号:抱抱小树<br>测试仅供参考哦｜设计开发:潮玩ip抱抱小树</p>
-  <button onclick="location.reload()">再测一次</button>
-  <button onclick="downloadCurrentCard()">下载结果卡片</button>`;
+  const parts = analysis.split('\n\n');
+  const summary = parts[0] || '';
+  const detail = parts[1] || '';
+  const maskBlock = parts[2] || '';
+  const hidden = parts[3] || '';
+  const scene = parts[4] || '';
+  const mbtiLine = parts[5] || '';
+  const socialBlock = parts[6] || '';
+  const pain = parts[7] || '';
+
+  app.innerHTML = `
+    <div id="resultCard" onclick="hugEffect('${tree}')">
+      <h2>🎫 领取你的专属小树铭牌</h2>
+      <h3 style="margin-top:10px">${userName} 类似一棵${tree} 🌳</h3>
+      <p style="margin-top:10px;font-size:20px;color:#6b8e23">${scene}</p>
+      <p style="margin-top:12px;font-weight:bold">🌿 性格概括</p>
+      <p style="line-height:1.6">${summary}</p>
+      <p style="margin-top:10px;line-height:1.6">${detail}</p>
+      <p style="margin-top:12px;line-height:1.6">${maskBlock}</p>
+      <p style="margin-top:12px;font-size:18px;color:#3a5a00;font-weight:bold">${hidden}</p>
+      <p style="margin-top:10px;font-size:20px;color:#3f5f12">${mbtiLine}</p>
+      <p style="margin-top:12px;line-height:1.6">${socialBlock}</p>
+      <p style="margin-top:12px">${pain}</p>
+      <p style="margin-top:12px">🌱 ${text}</p>
+    </div>
+    <div id="hugText" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.8);font-size:28px;font-weight:bold;color:#3a5a00;opacity:0;transition:all 0.4s;pointer-events:none;"></div>
+    <p style="font-size:14px;opacity:0.6">微信公众号:抱抱小树<br>测试仅供参考哦｜设计开发:潮玩ip抱抱小树</p>
+    <button onclick="location.reload()">再测一次</button>
+    <button onclick="downloadCurrentCard()">下载结果卡片</button>`;
 }
 
 function downloadCurrentCard(){
-  downloadCard(lastResult.tree,lastResult.encourage,lastResult.analysis);
+  downloadCard(lastResult.tree, lastResult.encourage, lastResult.analysis);
 }
 
-function downloadCard(tree,text,analysis){
-  const canvas=document.createElement('canvas');
-  canvas.width=600; canvas.height=900;
-  const ctx=canvas.getContext('2d');
-  ctx.fillStyle="#f5fff7"; ctx.fillRect(0,0,600,900);
-  ctx.fillStyle="#333"; ctx.font="28px sans-serif"; ctx.fillText(`${userName} 类似一棵${tree}`,50,90);
-  ctx.font="20px sans-serif"; ctx.fillText(`${userName} 被树抱住了一下`,50,130);
-  ctx.font="18px sans-serif"; wrapText(ctx,`优点：温柔、真实、有自己的节奏`,50,190,500,28);
-  const parts=analysis.split('\n\n');
-  wrapText(ctx,parts[0]||'',50,260,500,28);
-  wrapText(ctx,parts[1]||'',50,340,500,28);
-  wrapText(ctx,parts[2]||'',50,470,500,28);
-  wrapText(ctx,(parts[3]||'') + ' ' + (parts[4]||''),50,520,500,28);
-  wrapText(ctx,text,50,640,500,28);
-  ctx.font="16px sans-serif"; wrapText(ctx,"微信公众号:抱抱小树",50,780,500,24);
-  wrapText(ctx,"测试仅供参考哦｜设计开发:潮玩ip抱抱小树",50,815,500,24);
-  const link=document.createElement('a');
-  link.download="tree.png"; link.href=canvas.toDataURL(); link.click();
-  app.innerHTML += `<p style="margin-top:20px">🌟 你的优点：温柔、真实、有自己的节奏</p><p style="line-height:1.6">💬 ${lastResult.encourage}</p>`;
-}
-
-function wrapText(ctx,text,x,y,maxWidth,lineHeight){
-  let line='';
-  const chars=(text||'').split('');
-  for(let i=0;i<chars.length;i++){
-    const test=line+chars[i];
-    const metrics=ctx.measureText(test);
-    if(metrics.width>maxWidth && i>0){ ctx.fillText(line,x,y); line=chars[i]; y+=lineHeight; }
-    else line=test;
+function downloadCard(tree, text, analysis){
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 980;
+  const ctx = canvas.getContext('2d');
+  if(!ctx){
+    window.alert('结果卡片暂时无法生成');
+    return;
   }
-  ctx.fillText(line,x,y);
+
+  ctx.fillStyle = '#f5fff7';
+  ctx.fillRect(0, 0, 600, 980);
+  ctx.fillStyle = '#333';
+  ctx.font = '28px sans-serif';
+  ctx.fillText(`${userName} 类似一棵${tree}`, 50, 90);
+  ctx.font = '20px sans-serif';
+  ctx.fillText(`${userName} 被树抱住了一下`, 50, 130);
+  ctx.font = '18px sans-serif';
+
+  const parts = String(analysis || '').split('\n\n');
+  wrapText(ctx, parts[0] || '', 50, 190, 500, 28);
+  wrapText(ctx, parts[1] || '', 50, 280, 500, 28);
+  wrapText(ctx, parts[2] || '', 50, 400, 500, 28);
+  wrapText(ctx, parts[3] || '', 50, 500, 500, 28);
+  wrapText(ctx, parts[4] || '', 50, 570, 500, 28);
+  wrapText(ctx, parts[5] || '', 50, 640, 500, 28);
+  wrapText(ctx, parts[6] || '', 50, 690, 500, 28);
+  wrapText(ctx, parts[7] || '', 50, 790, 500, 28);
+  wrapText(ctx, text || '', 50, 860, 500, 28);
+
+  ctx.font = '16px sans-serif';
+  wrapText(ctx, '微信公众号:抱抱小树', 50, 920, 500, 24);
+  wrapText(ctx, '测试仅供参考哦｜设计开发:潮玩ip抱抱小树', 50, 945, 500, 24);
+
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `${userName || 'tree'}-${tree}-result.png`;
+    link.href = dataUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (e) {
+    const dataUrl = canvas.toDataURL('image/png');
+    const newWindow = window.open();
+    if(newWindow){
+      newWindow.document.write(`<img src="${dataUrl}" style="max-width:100%;display:block;margin:0 auto;" />`);
+    } else {
+      window.alert('浏览器拦截了下载，请允许弹窗后重试');
+    }
+  }
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  let line = '';
+  const chars = (text || '').split('');
+  for(let i = 0; i < chars.length; i += 1){
+    const test = line + chars[i];
+    const metrics = ctx.measureText(test);
+    if(metrics.width > maxWidth && i > 0){
+      ctx.fillText(line, x, y);
+      line = chars[i];
+      y += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, y);
 }
 
 function hugEffect(tree){
-  const el=document.getElementById('hugText');
+  const el = document.getElementById('hugText');
   if(!el) return;
-  el.innerText=`${tree} 抱了抱你`;
-  el.style.opacity=1;
-  el.style.transform='translate(-50%,-50%) scale(1.1)';
-  setTimeout(()=>{el.style.opacity=0; el.style.transform='translate(-50%,-50%) scale(0.8)';},1200);
+  el.innerText = `${tree} 抱了抱${userName || '你'}`;
+  el.style.opacity = 1;
+  el.style.transform = 'translate(-50%,-50%) scale(1.1)';
+  setTimeout(() => {
+    el.style.opacity = 0;
+    el.style.transform = 'translate(-50%,-50%) scale(0.8)';
+  }, 1200);
 }
+
+console.assert(Array.isArray(allQuestions) && allQuestions.length === 25, '题库应为25题');
+console.assert(Array.isArray(allTrees) && allTrees.length === 40, '树种应为40种');
+console.assert(typeof getAnalysis('银杏') === 'string', 'getAnalysis 应返回字符串');
+console.assert(typeof getEncourage('银杏') === 'string', 'getEncourage 应返回字符串');
+console.assert(getAnalysis('银杏').split('\n\n').length >= 8, '分析文案应能被正确拆分');
 
 startPage();
 </script>
