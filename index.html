@@ -4,13 +4,16 @@
 <meta charset="UTF-8" />
 <title>你是一棵什么树</title>
 <style>
-body{font-family:sans-serif;font-size:1.5em;background:linear-gradient(135deg,#fff7cc,#e6f5d0);display:flex;justify-content:center;align-items:center;height:100vh;position:relative;overflow:hidden;margin:0;}
+body{font-family:sans-serif;font-size:2.2em;background:linear-gradient(135deg,#fff7cc,#e6f5d0);display:flex;justify-content:center;align-items:center;height:100vh;position:relative;overflow:hidden;margin:0;}
 body::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%, rgba(255,255,255,0.8) 2px, transparent 3px),radial-gradient(circle at 70% 20%, rgba(255,255,255,0.7) 2px, transparent 3px),radial-gradient(circle at 40% 80%, rgba(255,255,255,0.6) 2px, transparent 3px),radial-gradient(circle at 80% 70%, rgba(255,255,255,0.7) 2px, transparent 3px),radial-gradient(circle at 10% 60%, rgba(255,255,255,0.5) 2px, transparent 3px),radial-gradient(circle at 30% 50%, rgba(120,180,80,0.25) 6px, transparent 7px),radial-gradient(circle at 60% 75%, rgba(120,180,80,0.2) 6px, transparent 7px),radial-gradient(circle at 85% 40%, rgba(120,180,80,0.2) 6px, transparent 7px);background-repeat:repeat;background-size:200px 200px;pointer-events:none;}
-#app{width:1000px;max-width:95vw;height:auto;max-height:90vh;overflow:auto;padding:56px;background:linear-gradient(#ffffff,#f9ffe8);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center;border:1px solid #e6f5d0;position:relative;z-index:1;}
-input{padding:10px;border-radius:10px;border:1px solid #ddd;width:100%;margin:10px 0;box-sizing:border-box;}
-button{margin-top:12px;width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#a8e063,#ffd95a);color:#3a5a00;font-size:16px;cursor:pointer;font-weight:bold;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+#app{width:90vw;max-width:90vw;height:55vh;max-height:60vh;overflow:auto;padding:64px;background:linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,255,232,0.68));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center;border:1px solid rgba(230,245,208,0.75);position:relative;z-index:1;}
+input{padding:20px;border-radius:14px;border:1px solid #ddd;width:60%;margin:20px auto;display:block;box-sizing:border-box;font-size:1.6em;text-align:center;}
+button{margin-top:16px;width:100%;padding:28px;border:none;border-radius:18px;background:linear-gradient(135deg,#a8e063,#ffd95a);color:#3a5a00;font-size:26px;cursor:pointer;font-weight:bold;box-shadow:0 6px 14px rgba(0,0,0,0.12);}
 label{display:block;text-align:left;margin:10px 0;line-height:1.5;}
 h2,h3,p{margin:0 0 10px 0;}
+.small-credit{position:absolute;right:22px;bottom:18px;text-align:center;color:#6b8e23;opacity:0.8;line-height:1.2;}
+.small-credit .tree{font-size:56px;margin-bottom:6px;display:block;}
+.small-credit .text{font-size:12px;}
 
 @media (max-width:768px){
   body{align-items:stretch;height:auto;}
@@ -36,7 +39,7 @@ let answers = {};
 let lastResult = { tree:"", encourage:"", analysis:"", mbti:"", keywords:[] };
 let scores = {E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0};
 
-const questions=[
+const allQuestions=[
 {id:1,type:"single",text:"你点外卖时，如果已经挑了很久，临下单前又看到一家图片更好看的店，你通常会：",options:[{text:"还是会回去认真对比评价、配送时间和价格，确认之后再下单",axis:"S",weight:2},{text:"大概看一眼，觉得差不多就选原来的，不想再花太多时间",axis:"S",weight:1},{text:"很容易被新的图片和描述吸引，开始重新犹豫要不要换一家",axis:"N",weight:1},{text:"会突然完全改变主意，凭当下那一瞬间的感觉重新下单",axis:"N",weight:2}]},
 {id:2,type:"single",text:"和别人聊天时，如果话题突然断掉、气氛变得有点安静，你更可能会：",options:[{text:"主动再抛一个新话题，尽量把场子接住，不让气氛掉下去",axis:"E",weight:2},{text:"简单补一句，给彼此留个缓冲，不让冷场显得太明显",axis:"E",weight:1},{text:"接受这段安静，觉得也不是非得一直有人说话才舒服",axis:"I",weight:1},{text:"会明显感觉有点尴尬，开始在心里想自己刚刚是不是说错了什么",axis:"I",weight:2}]},
 {id:3,type:"single",text:"你看到一个很喜欢、但价格明显有点超出预期的东西时，最常见的反应是：",options:[{text:"先理性分析它到底值不值得，自己会不会真的长期用到它",axis:"T",weight:2},{text:"会先纠结一阵子，一边喜欢一边心疼钱，反复想要不要买",axis:"F",weight:1},{text:"如果当下真的很喜欢，可能会先买下来，之后再慢慢想值不值",axis:"P",weight:2},{text:"会强行劝自己放弃，告诉自己这不是必需品，先别冲动",axis:"J",weight:1}]},
@@ -54,16 +57,34 @@ const questions=[
 {id:15,type:"multi",text:"如果你突然得到一笔意外之财，不至于彻底改变生活，但也足够让你做几个选择。你心里更可能同时冒出来哪些念头？（可多选）",options:[{text:"先拿一部分去花掉，让自己开心一下，毕竟这种机会本来就不常有",axis:"P",weight:2},{text:"还是想先存起来，至少让自己在接下来的生活里更有安全感",axis:"J",weight:2},{text:"可以认真分配一下，一部分留着，一部分满足当下需要，这样比较平衡",axis:"T",weight:1},{text:"会很想借这个机会好好奖励一下自己，补偿最近那些没说出口的辛苦",axis:"F",weight:1}]}
 ];
 
+let questions = [];
+
 const allTrees=["银杏","松树","樱花","橡树","柳树","竹子","枫树","榕树","柏树","水杉","白桦","桂花","紫藤","海棠","桃树","香樟","梧桐","棕榈","冷杉","云杉","铁杉","栎树","槐树","榆树","杉木","落羽杉","红杉","构树","乌桕","合欢","石榴","无花果","杏树","樱桃树","女贞","冬青","海桐","泡桐","楝树","榆叶梅","碧桃","紫薇","栾树","朴树","青冈","柞树","侧柏","龙柏","刺柏","油松","黑松","元宝枫","鸡爪槭","三角枫","黄栌","红枫","椰子树","槟榔","蒲葵","海枣","油棕","山茶","雪松","朴槿","山楂","槭树","胡杨"];
 
 function startPage(){
   app.innerHTML=`
-  <h2>✨🌳 测测你是一棵什么树~~ 🌟🌱</h2>
+  <h2 style="margin-bottom:60px">✨🌳 测测你是一棵什么树~~ 🌟🌱</h2>
   <input placeholder="输入你的昵称" oninput="userName=this.value" />
-  <button onclick="startTest()">开始测试</button>`;
+  <button onclick="startTest()">开始测试</button>
+  <div class="small-credit">
+    <span class="tree">🌳</span>
+    <div class="text">由 写代码新手培根 开发</div>
+  </div>`;
 }
 
 function startTest(){
+  userName = (userName || '').trim();
+  if(!userName) userName = '你';
+  current = 0;
+  answers = {};
+
+  const shuffled = [...allQuestions].sort(()=>Math.random()-0.5);
+  questions = shuffled.slice(0,12);
+
+  render();
+}
+
+function old_startTest_backup(){
   userName = (userName || '').trim();
   if(!userName) userName = '你';
   current = 0;
@@ -98,10 +119,10 @@ function render(){
   const q=questions[current];
   const progress=Math.round((current+1)/questions.length*100);
   app.innerHTML=`
-    <div style="height:8px;background:#e6f5d0;border-radius:10px;overflow:hidden;margin-bottom:16px;">
+    <div style="height:16px;background:#e6f5d0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
       <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#a8e063,#ffd95a);transition:width 0.3s;"></div>
     </div>
-    <div style="font-size:12px;color:#6b8e23;margin-bottom:10px">第 ${current+1} / ${questions.length} 题</div>
+    <div style="font-size:24px;color:#6b8e23;margin-bottom:16px;font-weight:bold">第 ${current+1} / ${questions.length} 题</div>
     <h3>${q.text}</h3>
     ${q.options.map((o,i)=>`
       <label>
@@ -145,23 +166,43 @@ function getEncourage(tree){
 }
 
 function getAnalysis(tree){
-  const taglineMap={
-    "松树":"你是那种别人倒了你还站着的人","樱花":"你认真过的瞬间，本身就值得","竹子":"你不说，不代表你没判断","榕树":"你总是在替别人撑着一部分世界","银杏":"你会慢慢变成很重要的人","枫树":"你是那种会随着时间变深的人"
-  };
   const mbtiList=["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
   const keywordPool=["稳定","边界","慢热","真实","感知","长期主义","韧性","独立","克制","观察","表达","连接","秩序","自由","情绪力","判断力","适应","耐心","安全感","行动力","敏感","果断","节奏","松弛","共情","理性","直觉","抗压","持续","温和","锋利","包容","清醒","探索","专注","保留","外放","内敛","成长","结构","变化","坚持","自洽","效率","洞察","热烈","分寸","边缘感","控制感","生命力"];
-  const h=hash(tree);
+
+  const h=hash(tree+JSON.stringify(answers));
   const mbti=mbtiList[h%mbtiList.length];
+
   const kw=[]; let used={}; let seed=h;
-  while(kw.length<5){seed=(seed*9301+49297)%233280; const idx=seed%keywordPool.length; if(!used[idx]){kw.push(keywordPool[idx]); used[idx]=true;}}
-  const intro=[`你更像一棵${tree}，不是一下子被看见的类型，而是慢慢显出价值。`,`像${tree}这样的人，通常不急，但很稳。`,`你像${tree}一样，有自己的节奏，很少被轻易带走。`];
-  const behavior=[`在生活里，你更习惯先观察再行动，尤其在涉及金钱、关系或选择时，会在心里反复权衡。`,`你做决定往往不是冲动型，而是会把很多现实因素放在一起考虑。`,`你对风险和边界是有感知的，不会轻易把自己放进不确定里。`];
-  const relation=[`在关系里，你不会一下子完全打开，但一旦认可，就会持续投入。`,`你对人是有选择的，不是谁都能进入你的内在范围。`,`你更偏向稳定关系，而不是短期热烈。`];
-  const weakness=[`但有时候你会把很多情绪留在心里，让自己看起来很能撑。`,`偶尔你会想太多，提前消耗自己的精力。`,`你有时会选择忍一下，但代价是自己慢慢消耗。`];
-  const encourage=[`其实你现在的节奏没有问题，你只是生长得更安静一点。`,`你已经在变强了，只是不是那种外放的方式。`,`你不用成为别的树，你本来就有自己的生长路径。`];
-  const tagline=taglineMap[tree] || `你正在长成你该成为的样子`;
-  const text=`${intro[h%intro.length]}${behavior[(h>>1)%behavior.length]}${relation[(h>>2)%relation.length]}${weakness[(h>>3)%weakness.length]}${encourage[(h>>4)%encourage.length]}`;
-  return `${tagline}\n\n${text}\n\n🌲 MBTI倾向：${mbti}\n\n🌿 性格关键词：\n${kw.join(' / ')}`;
+  while(kw.length<5){
+    seed=(seed*9301+49297)%233280;
+    const idx=seed%keywordPool.length;
+    if(!used[idx]){kw.push(keywordPool[idx]); used[idx]=true;}
+  }
+
+  const treeTraits={
+    "松树":"耐寒稳定型","樱花":"情绪感知型","竹子":"韧性成长型","榕树":"包容支撑型","银杏":"慢热积累型","枫树":"变化感知型"
+  };
+
+  const trait=treeTraits[tree]||"自洽生长型";
+
+  const sentences=[
+    `你像${tree}一样，属于${trait}的人，做事不急但很稳。`,
+    `你更习惯在行动前观察，这让你很少做出后悔的选择。`,
+    `在人际关系里，你不是最外放的，但你很真实。`,
+    `你对边界和情绪有感知，这是一种成熟能力。`,
+    `有时你会想太多，提前消耗精力。`,
+    `慢一点没关系，你本来就不是靠速度取胜。`
+  ];
+
+  const shuffled=[...sentences].sort(()=>Math.random()-0.5);
+  const text=shuffled.slice(0,5).join('');
+
+  return `🌲 MBTI倾向：${mbti}
+
+🌿 性格关键词：
+${kw.join(' / ')}
+
+${text}`;
 }
 
 function submit(){
@@ -180,10 +221,10 @@ function submit(){
   <div id="resultCard" onclick="hugEffect('${tree}')">
     <h2>🎫 领取你的专属小树铭牌</h2>
     <h3 style="margin-top:10px">${userName} 类似一棵${tree} 🌳</h3>
+    <p style="margin-top:10px;font-size:22px;font-weight:bold;color:#3f5f12">${mbtiLine}</p>
     <p style="margin-top:10px;font-weight:bold">🌿 性格概括</p>
     <p style="line-height:1.6">${summary}</p>
-    <p style="margin-top:10px;font-size:14px;color:#4f6f1f">${mbtiLine}</p>
-    <p style="margin-top:6px;font-size:14px;color:#4f6f1f">${keywordTitle}</p>
+    <p style="margin-top:10px;font-size:14px;color:#4f6f1f">${keywordTitle}</p>
     <p style="margin-top:4px;font-size:14px;line-height:1.6;color:#4f6f1f">${keywordLine}</p>
     <p style="margin-top:12px">🌱 ${text}</p>
   </div>
