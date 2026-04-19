@@ -5,17 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>你是一棵什么树</title>
 <style>
-body{font-family:sans-serif;font-size:2.2em;background:linear-gradient(135deg,#fff7cc,#e6f5d0);display:flex;justify-content:center;align-items:center;height:100vh;position:relative;overflow:hidden;margin:0;}
-body::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%, rgba(255,255,255,0.8) 2px, transparent 3px),radial-gradient(circle at 70% 20%, rgba(255,255,255,0.7) 2px, transparent 3px),radial-gradient(circle at 40% 80%, rgba(255,255,255,0.6) 2px, transparent 3px),radial-gradient(circle at 80% 70%, rgba(255,255,255,0.7) 2px, transparent 3px),radial-gradient(circle at 10% 60%, rgba(255,255,255,0.5) 2px, transparent 3px),radial-gradient(circle at 30% 50%, rgba(120,180,80,0.25) 6px, transparent 7px),radial-gradient(circle at 60% 75%, rgba(120,180,80,0.2) 6px, transparent 7px),radial-gradient(circle at 85% 40%, rgba(120,180,80,0.2) 6px, transparent 7px);background-repeat:repeat;background-size:200px 200px;pointer-events:none;}
-#app{width:90vw;max-width:90vw;height:80vh;max-height:90vh;overflow:auto;padding:64px;background:linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,255,232,0.68));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center;border:1px solid rgba(230,245,208,0.75);position:relative;z-index:1;box-sizing:border-box;}
-input{padding:20px;border-radius:14px;border:1px solid #ddd;width:60%;margin:20px auto;display:block;box-sizing:border-box;font-size:1.6em;text-align:center;}
-button{margin-top:16px;width:100%;padding:28px;border:none;border-radius:18px;background:linear-gradient(135deg,#a8e063,#ffd95a);color:#3a5a00;font-size:26px;cursor:pointer;font-weight:bold;box-shadow:0 6px 14px rgba(0,0,0,0.12);}
+body{font-family:sans-serif;font-size:16px;background:linear-gradient(135deg,#dff4ff,#eafcff,#e6f5d0,#fff7cc);display:flex;justify-content:center;align-items:center;height:100vh;position:relative;overflow:hidden;margin:0;}
+body::before{content:"";position:absolute;inset:0;background-image:
+radial-gradient(circle at 20% 30%, rgba(255,255,255,0.9) 2px, transparent 3px),
+radial-gradient(circle at 70% 20%, rgba(255,255,255,0.9) 2px, transparent 3px),
+radial-gradient(circle at 40% 80%, rgba(255,255,255,0.8) 2px, transparent 3px),
+radial-gradient(circle at 80% 70%, rgba(255,255,255,0.8) 2px, transparent 3px),
+radial-gradient(circle at 10% 60%, rgba(255,255,255,0.7) 2px, transparent 3px),
+radial-gradient(circle at 50% 50%, rgba(255,255,255,0.6) 1.5px, transparent 2.5px);
+background-repeat:repeat;
+background-size:180px 180px;
+pointer-events:none;
+}
+#app{width:90vw;max-width:90vw;height:80vh;max-height:90vh;overflow:auto;padding:64px;background:linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,255,232,0.68));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:36px;box-shadow:0 12px 40px rgba(0,0,0,0.1);text-align:center;border:1px solid rgba(230,245,208,0.75);position:relative;z-index:1;box-sizing:border-box;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center;border:1px solid rgba(230,245,208,0.75);position:relative;z-index:1;box-sizing:border-box;}
+input{padding:18px;border-radius:14px;border:1px solid #ddd;width:60%;margin:20px auto;display:block;box-sizing:border-box;font-size:16px;text-align:center;}text-align:center;}
+button{margin-top:18px;width:100%;padding:28px;border:none;border-radius:40px;background:linear-gradient(145deg,#ffd6e7,#ffc2dc);color:#7a2e4d;font-size:16px;cursor:pointer;font-weight:bold;box-shadow:0 10px 20px rgba(255,182,193,0.4), inset 0 2px 6px rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s ease;}
+button:active{transform:scale(0.97);box-shadow:0 6px 12px rgba(255,182,193,0.3);}
+button::before{content:"🌱";font-size:22px;}
 label{display:block;text-align:left;margin:10px 0;line-height:1.5;cursor:pointer;background:rgba(255,255,255,0.7);padding:14px 16px;border-radius:16px;}
 label input{width:auto;margin-right:12px;display:inline-block;font-size:inherit;}
 h2,h3,p{margin:0 0 10px 0;}
 .small-credit{position:absolute;right:22px;bottom:18px;text-align:center;color:#6b8e23;opacity:0.8;line-height:1.2;}
 .small-credit .tree{font-size:56px;margin-bottom:6px;display:block;}
-.small-credit .text{font-size:12px;}
+..small-credit .text{font-size:14px;}
 
 @media (max-width:768px){
   body{align-items:stretch;height:auto;}
@@ -144,7 +156,10 @@ function render(){
     <div style="height:16px;background:#e6f5d0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
       <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#a8e063,#ffd95a);transition:width 0.3s;"></div>
     </div>
-    <div style="font-size:24px;color:#6b8e23;margin-bottom:16px;font-weight:bold">第 ${current + 1} / ${questions.length} 题</div>
+    <div style="font-size:14px;color:#6b8e23;margin-bottom:16px;font-weight:bold">第 ${current + 1} / ${questions.length} 题</div>
+    <style>
+    #progressText{font-size:18px !important;}
+    </style>
     <h3>${q.text}</h3>
     ${q.options.map((o, i) => `
       <label>
@@ -289,18 +304,18 @@ function submit(){
     <div id="resultCard" onclick="hugEffect('${tree}')">
       <h2>🎫 领取你的专属小树铭牌</h2>
       <h3 style="margin-top:10px">${userName} 类似一棵${tree} 🌳</h3>
-      <p style="margin-top:10px;font-size:20px;color:#6b8e23">${scene}</p>
+      <p style="margin-top:10px;font-size:14px;color:#6b8e23">${scene}</p>
       <p style="margin-top:12px;font-weight:bold">🌿 性格概括</p>
       <p style="line-height:1.6">${summary}</p>
       <p style="margin-top:10px;line-height:1.6">${detail}</p>
       <p style="margin-top:12px;line-height:1.6">${maskBlock}</p>
-      <p style="margin-top:12px;font-size:18px;color:#3a5a00;font-weight:bold">${hidden}</p>
-      <p style="margin-top:10px;font-size:20px;color:#3f5f12">${mbtiLine}</p>
+      <p style="margin-top:12px;font-size:14px;color:#3a5a00;font-weight:bold">${hidden}</p>
+      <p style="margin-top:10px;font-size:14px;color:#3f5f12">${mbtiLine}</p>
       <p style="margin-top:12px;line-height:1.6">${socialBlock}</p>
       <p style="margin-top:12px">${pain}</p>
       <p style="margin-top:12px">🌱 ${text}</p>
     </div>
-    <div id="hugText" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.8);font-size:28px;font-weight:bold;color:#3a5a00;opacity:0;transition:all 0.4s;pointer-events:none;"></div>
+    <div id="hugText" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%) scale(0.8);font-size:14px;font-weight:bold;color:#3a5a00;opacity:0;transition:all 0.4s;pointer-events:none;"></div>
     <p style="font-size:14px;opacity:0.6">微信公众号:抱抱小树<br>测试仅供参考哦｜设计开发:潮玩ip抱抱小树</p>
     <button onclick="location.reload()">再测一次</button>
     <button onclick="downloadCurrentCard()">下载结果卡片</button>`;
